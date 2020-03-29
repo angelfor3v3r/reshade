@@ -128,7 +128,37 @@ static void vr_submit_d3d12(vr::EVREye eye, const vr::D3D12TextureData_t *textur
 	runtime->on_present();
 }
 
-static vr::EVRCompositorError IVRCompositor_Submit(vr::IVRCompositor *pCompositor, vr::EVREye eEye, const vr::Texture_t *pTexture, const vr::VRTextureBounds_t *pBounds, vr::EVRSubmitFlags nSubmitFlags)
+static vr::EVRCompositorError IVRCompositor_Submit_007(vr::IVRCompositor *pCompositor, vr::EVREye eEye, unsigned int eTextureType, void *pTexture, const vr::VRTextureBounds_t *pBounds)
+{
+	switch (eTextureType)
+	{
+	case 0: // API_DirectX
+		vr_submit_d3d11(eEye, static_cast<ID3D11Texture2D *>(pTexture), pBounds);
+		break;
+	case 1: // API_OpenGL
+		vr_submit_gl(eEye, static_cast<GLuint>(reinterpret_cast<uintptr_t>(pTexture)), false, pBounds);
+		break;
+	}
+
+	static const auto trampoline = reshade::hooks::call(IVRCompositor_Submit_007);
+	return trampoline(pCompositor, eEye, eTextureType, pTexture, pBounds);
+}
+static vr::EVRCompositorError IVRCompositor_Submit_008(vr::IVRCompositor *pCompositor, vr::EVREye eEye, unsigned int eTextureType, void *pTexture, const vr::VRTextureBounds_t *pBounds, vr::EVRSubmitFlags nSubmitFlags)
+{
+	switch (eTextureType)
+	{
+	case 0: // API_DirectX
+		vr_submit_d3d11(eEye, static_cast<ID3D11Texture2D *>(pTexture), pBounds);
+		break;
+	case 1: // API_OpenGL
+		vr_submit_gl(eEye, static_cast<GLuint>(reinterpret_cast<uintptr_t>(pTexture)), false, pBounds);
+		break;
+	}
+
+	static const auto trampoline = reshade::hooks::call(IVRCompositor_Submit_008);
+	return trampoline(pCompositor, eEye, eTextureType, pTexture, pBounds, nSubmitFlags);
+}
+static vr::EVRCompositorError IVRCompositor_Submit_009(vr::IVRCompositor *pCompositor, vr::EVREye eEye, const vr::Texture_t *pTexture, const vr::VRTextureBounds_t *pBounds, vr::EVRSubmitFlags nSubmitFlags)
 {
 	assert(pTexture != nullptr);
 
@@ -148,7 +178,7 @@ static vr::EVRCompositorError IVRCompositor_Submit(vr::IVRCompositor *pComposito
 		break;
 	}
 
-	static const auto trampoline = reshade::hooks::call(IVRCompositor_Submit);
+	static const auto trampoline = reshade::hooks::call(IVRCompositor_Submit_009);
 	return trampoline(pCompositor, eEye, pTexture, pBounds, nSubmitFlags);
 }
 
@@ -182,8 +212,18 @@ HOOK_EXPORT void *   VR_CALLTYPE VR_GetGenericInterface(const char *pchInterface
 
 	void *const interface_instance = reshade::hooks::call(VR_GetGenericInterface)(pchInterfaceVersion, peError);
 
-	if (strcmp(pchInterfaceVersion, "IVRCompositor_026") == 0)
-		reshade::hooks::install("IVRCompositor::Submit", vtable_from_instance(static_cast<vr::IVRCompositor *>(interface_instance)), 5, reinterpret_cast<reshade::hook::address>(IVRCompositor_Submit));
+	if (unsigned int compositor_version = 0;
+		std::sscanf(pchInterfaceVersion, "IVRCompositor_%u", &compositor_version))
+	{
+		if (compositor_version >= 12)
+			reshade::hooks::install("IVRCompositor::Submit", vtable_from_instance(static_cast<vr::IVRCompositor *>(interface_instance)), 5, reinterpret_cast<reshade::hook::address>(IVRCompositor_Submit_009));
+		else if (compositor_version >= 9)
+			reshade::hooks::install("IVRCompositor::Submit", vtable_from_instance(static_cast<vr::IVRCompositor *>(interface_instance)), 4, reinterpret_cast<reshade::hook::address>(IVRCompositor_Submit_009));
+		else if (compositor_version == 8)
+			reshade::hooks::install("IVRCompositor::Submit", vtable_from_instance(static_cast<vr::IVRCompositor *>(interface_instance)), 6, reinterpret_cast<reshade::hook::address>(IVRCompositor_Submit_008));
+		else if (compositor_version == 7)
+			reshade::hooks::install("IVRCompositor::Submit", vtable_from_instance(static_cast<vr::IVRCompositor *>(interface_instance)), 6, reinterpret_cast<reshade::hook::address>(IVRCompositor_Submit_007));
+	}
 
 	return interface_instance;
 }

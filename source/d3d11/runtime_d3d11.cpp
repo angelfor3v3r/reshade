@@ -55,7 +55,6 @@ reshade::d3d11::runtime_d3d11::runtime_d3d11(ID3D11Device *device, IDXGISwapChai
 	_app_state(device)
 {
 	assert(device != nullptr);
-	assert(swapchain != nullptr);
 
 	_device->GetImmediateContext(&_immediate_context);
 
@@ -102,21 +101,38 @@ reshade::d3d11::runtime_d3d11::~runtime_d3d11()
 		FreeLibrary(_d3d_compiler);
 }
 
-bool reshade::d3d11::runtime_d3d11::on_init(const DXGI_SWAP_CHAIN_DESC &swap_desc)
+bool reshade::d3d11::runtime_d3d11::on_init(const DXGI_SWAP_CHAIN_DESC &swap_desc
+#if RESHADE_OPENVR
+	, ID3D11Texture2D *backbuffer
+#endif
+	)
 {
-	RECT window_rect = {};
-	GetClientRect(swap_desc.OutputWindow, &window_rect);
-
-	_width = swap_desc.BufferDesc.Width;
-	_height = swap_desc.BufferDesc.Height;
-	_window_width = window_rect.right - window_rect.left;
-	_window_height = window_rect.bottom - window_rect.top;
+	_width = _window_width = swap_desc.BufferDesc.Width;
+	_height = _window_height = swap_desc.BufferDesc.Height;
 	_color_bit_depth = dxgi_format_color_depth(swap_desc.BufferDesc.Format);
 	_backbuffer_format = swap_desc.BufferDesc.Format;
 
-	// Get back buffer texture
-	if (FAILED(_swapchain->GetBuffer(0, IID_PPV_ARGS(&_backbuffer))))
-		return false;
+	if (swap_desc.OutputWindow != nullptr)
+	{
+		RECT window_rect = {};
+		GetClientRect(swap_desc.OutputWindow, &window_rect);
+		_window_width = window_rect.right - window_rect.left;
+		_window_height = window_rect.bottom - window_rect.top;
+	}
+
+#if RESHADE_OPENVR
+	if (backbuffer != nullptr)
+	{
+		_backbuffer = backbuffer;
+	}
+	else
+#endif
+	{
+		assert(_swapchain != nullptr);
+		// Get back buffer texture
+		if (FAILED(_swapchain->GetBuffer(0, IID_PPV_ARGS(&_backbuffer))))
+			return false;
+	}
 
 	D3D11_TEXTURE2D_DESC tex_desc = {};
 	tex_desc.Width = _width;
@@ -128,14 +144,7 @@ bool reshade::d3d11::runtime_d3d11::on_init(const DXGI_SWAP_CHAIN_DESC &swap_des
 	tex_desc.Usage = D3D11_USAGE_DEFAULT;
 	tex_desc.BindFlags = D3D11_BIND_RENDER_TARGET;
 
-	// Creating a render target view for the back buffer fails on Windows 8+, so use a intermediate texture there
-	OSVERSIONINFOEX verinfo_windows7 = { sizeof(OSVERSIONINFOEX), 6, 1 };
-	const bool is_windows7 = VerifyVersionInfo(&verinfo_windows7, VER_MAJORVERSION | VER_MINORVERSION,
-		VerSetConditionMask(VerSetConditionMask(0, VER_MAJORVERSION, VER_EQUAL), VER_MINORVERSION, VER_EQUAL)) != FALSE;
-
-	if (swap_desc.SampleDesc.Count > 1 ||
-		make_dxgi_format_normal(_backbuffer_format) != _backbuffer_format ||
-		!is_windows7)
+	if (swap_desc.SampleDesc.Count > 1)
 	{
 		if (FAILED(_device->CreateTexture2D(&tex_desc, nullptr, &_backbuffer_resolved)))
 			return false;
@@ -212,7 +221,8 @@ bool reshade::d3d11::runtime_d3d11::on_init(const DXGI_SWAP_CHAIN_DESC &swap_des
 #endif
 
 	// Clear reference count to make UnrealEngine happy
-	_backbuffer->Release();
+	if (_backbuffer != nullptr)
+		_backbuffer->Release();
 
 	return runtime::on_init(swap_desc.OutputWindow);
 }
@@ -221,7 +231,8 @@ void reshade::d3d11::runtime_d3d11::on_reset()
 	runtime::on_reset();
 
 	// Reset reference count to make UnrealEngine happy
-	_backbuffer->AddRef();
+	if (_backbuffer != nullptr)
+		_backbuffer->AddRef();
 
 	_backbuffer.reset();
 	_backbuffer_resolved.reset();
@@ -315,6 +326,10 @@ void reshade::d3d11::runtime_d3d11::on_present()
 
 		_immediate_context->Draw(3, 0);
 	}
+
+	float red[4] = { 1, 0, 0, 1 };
+	if (_swapchain == nullptr)
+		_immediate_context->ClearRenderTargetView(_backbuffer_rtv[0].get(), red);
 
 	// Apply previous state from application
 	_app_state.apply_and_release();

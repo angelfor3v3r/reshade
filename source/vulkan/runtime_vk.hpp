@@ -25,7 +25,11 @@ namespace reshade::vulkan
 		runtime_vk(VkDevice device, VkPhysicalDevice physical_device, uint32_t queue_family_index, const VkLayerInstanceDispatchTable &instance_table, const VkLayerDispatchTable &device_table);
 		~runtime_vk();
 
-		bool on_init(VkSwapchainKHR swapchain, const VkSwapchainCreateInfoKHR &desc, HWND hwnd);
+		bool on_init(VkSwapchainKHR swapchain, const VkSwapchainCreateInfoKHR &desc, HWND hwnd
+#if RESHADE_OPENVR
+			, VkImage backbuffer = VK_NULL_HANDLE
+#endif
+			);
 		void on_reset();
 		void on_present(VkQueue queue, uint32_t swapchain_image_index, const std::vector<VkSemaphore> &wait, VkSemaphore &signal);
 

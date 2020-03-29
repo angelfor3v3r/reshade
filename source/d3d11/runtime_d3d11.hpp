@@ -17,7 +17,11 @@ namespace reshade::d3d11
 		runtime_d3d11(ID3D11Device *device, IDXGISwapChain *swapchain);
 		~runtime_d3d11();
 
-		bool on_init(const DXGI_SWAP_CHAIN_DESC &desc);
+		bool on_init(const DXGI_SWAP_CHAIN_DESC &desc
+#if RESHADE_OPENVR
+			, ID3D11Texture2D *backbuffer = nullptr
+#endif
+			);
 		void on_reset();
 		void on_present();
 

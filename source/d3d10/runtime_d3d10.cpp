@@ -102,15 +102,18 @@ reshade::d3d10::runtime_d3d10::~runtime_d3d10()
 
 bool reshade::d3d10::runtime_d3d10::on_init(const DXGI_SWAP_CHAIN_DESC &swap_desc)
 {
-	RECT window_rect = {};
-	GetClientRect(swap_desc.OutputWindow, &window_rect);
-
-	_width = swap_desc.BufferDesc.Width;
-	_height = swap_desc.BufferDesc.Height;
-	_window_width = window_rect.right - window_rect.left;
-	_window_height = window_rect.bottom - window_rect.top;
+	_width = _window_width = swap_desc.BufferDesc.Width;
+	_height = _window_height = swap_desc.BufferDesc.Height;
 	_color_bit_depth = dxgi_format_color_depth(swap_desc.BufferDesc.Format);
 	_backbuffer_format = swap_desc.BufferDesc.Format;
+
+	if (swap_desc.OutputWindow != nullptr)
+	{
+		RECT window_rect = {};
+		GetClientRect(swap_desc.OutputWindow, &window_rect);
+		_window_width = window_rect.right - window_rect.left;
+		_window_height = window_rect.bottom - window_rect.top;
+	}
 
 	// Get back buffer texture
 	if (FAILED(_swapchain->GetBuffer(0, IID_PPV_ARGS(&_backbuffer))))

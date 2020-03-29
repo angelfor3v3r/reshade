@@ -116,30 +116,34 @@ reshade::opengl::runtime_gl::runtime_gl()
 
 bool reshade::opengl::runtime_gl::on_init(HWND hwnd, unsigned int width, unsigned int height)
 {
-	RECT window_rect = {};
-	GetClientRect(hwnd, &window_rect);
+	_width = _window_width = width;
+	_height = _window_height = height;
 
-	const HDC hdc = GetDC(hwnd);
-	PIXELFORMATDESCRIPTOR pfd = { sizeof(pfd) };
-	DescribePixelFormat(hdc, GetPixelFormat(hdc), sizeof(pfd), &pfd);
-
-	_width = width;
-	_height = height;
-	_window_width = window_rect.right - window_rect.left;
-	_window_height = window_rect.bottom - window_rect.top;
-	_color_bit_depth = pfd.cRedBits;
-
-	switch (pfd.cDepthBits)
+	if (hwnd != nullptr)
 	{
-	default:
-	case  0: _default_depth_format = GL_NONE; // No depth in this pixel format
-		break;
-	case 16: _default_depth_format = GL_DEPTH_COMPONENT16;
-		break;
-	case 24: _default_depth_format = pfd.cStencilBits ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT24;
-		break;
-	case 32: _default_depth_format = pfd.cStencilBits ? GL_DEPTH32F_STENCIL8 : GL_DEPTH_COMPONENT32;
-		break;
+		RECT window_rect = {};
+		GetClientRect(hwnd, &window_rect);
+		_window_width = window_rect.right - window_rect.left;
+		_window_height = window_rect.bottom - window_rect.top;
+
+		const HDC hdc = GetDC(hwnd);
+		PIXELFORMATDESCRIPTOR pfd = { sizeof(pfd) };
+		DescribePixelFormat(hdc, GetPixelFormat(hdc), sizeof(pfd), &pfd);
+
+		_color_bit_depth = pfd.cRedBits;
+
+		switch (pfd.cDepthBits)
+		{
+		default:
+		case  0: _default_depth_format = GL_NONE; // No depth in this pixel format
+			break;
+		case 16: _default_depth_format = GL_DEPTH_COMPONENT16;
+			break;
+		case 24: _default_depth_format = pfd.cStencilBits ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT24;
+			break;
+		case 32: _default_depth_format = pfd.cStencilBits ? GL_DEPTH32F_STENCIL8 : GL_DEPTH_COMPONENT32;
+			break;
+		}
 	}
 
 	// Initialize default frame buffer information

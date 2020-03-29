@@ -221,17 +221,24 @@ reshade::vulkan::runtime_vk::~runtime_vk()
 	vmaDestroyAllocator(_alloc);
 }
 
-bool reshade::vulkan::runtime_vk::on_init(VkSwapchainKHR swapchain, const VkSwapchainCreateInfoKHR &desc, HWND hwnd)
+bool reshade::vulkan::runtime_vk::on_init(VkSwapchainKHR swapchain, const VkSwapchainCreateInfoKHR &desc, HWND hwnd
+#if RESHADE_OPENVR
+	, VkImage backbuffer
+#endif
+	)
 {
-	RECT window_rect = {};
-	GetClientRect(hwnd, &window_rect);
-
-	_width = desc.imageExtent.width;
-	_height = desc.imageExtent.height;
-	_window_width = window_rect.right - window_rect.left;
-	_window_height = window_rect.bottom - window_rect.top;
+	_width = _window_width = desc.imageExtent.width;
+	_height = _window_height = desc.imageExtent.height;
 	_color_bit_depth = desc.imageFormat >= VK_FORMAT_A2R10G10B10_UNORM_PACK32 && desc.imageFormat <= VK_FORMAT_A2B10G10R10_SINT_PACK32 ? 10 : 8;
 	_backbuffer_format = desc.imageFormat;
+
+	if (hwnd != nullptr)
+	{
+		RECT window_rect = {};
+		GetClientRect(hwnd, &window_rect);
+		_window_width = window_rect.right - window_rect.left;
+		_window_height = window_rect.bottom - window_rect.top;
+	}
 
 	if (_queue == VK_NULL_HANDLE)
 		return false;
@@ -314,9 +321,21 @@ bool reshade::vulkan::runtime_vk::on_init(VkSwapchainKHR swapchain, const VkSwap
 
 	// Get back buffer images
 	uint32_t num_images = 0;
-	check_result(vk.GetSwapchainImagesKHR(_device, swapchain, &num_images, nullptr)) false;
-	_swapchain_images.resize(num_images);
-	check_result(vk.GetSwapchainImagesKHR(_device, swapchain, &num_images, _swapchain_images.data())) false;
+#if RESHADE_OPENVR
+	if (backbuffer != VK_NULL_HANDLE)
+	{
+		num_images = 1;
+		_swapchain_images.resize(1);
+		_swapchain_images[0] = backbuffer;
+	}
+	else
+#endif
+	{
+		assert(swapchain != VK_NULL_HANDLE);
+		check_result(vk.GetSwapchainImagesKHR(_device, swapchain, &num_images, nullptr)) false;
+		_swapchain_images.resize(num_images);
+		check_result(vk.GetSwapchainImagesKHR(_device, swapchain, &num_images, _swapchain_images.data())) false;
+	}
 
 	assert(desc.imageUsage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 	_render_area = desc.imageExtent;

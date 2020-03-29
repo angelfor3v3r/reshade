@@ -20,7 +20,7 @@ namespace reshade::d3d12
 		~runtime_d3d12();
 
 		bool on_init(const DXGI_SWAP_CHAIN_DESC &desc
-#if RESHADE_D3D12ON7
+#if RESHADE_D3D12ON7 || RESHADE_OPENVR
 			, ID3D12Resource *backbuffer = nullptr
 #endif
 			);

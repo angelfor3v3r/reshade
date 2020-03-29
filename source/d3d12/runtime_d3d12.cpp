@@ -121,27 +121,30 @@ reshade::d3d12::runtime_d3d12::~runtime_d3d12()
 }
 
 bool reshade::d3d12::runtime_d3d12::on_init(const DXGI_SWAP_CHAIN_DESC &swap_desc
-#if RESHADE_D3D12ON7
+#if RESHADE_D3D12ON7 || RESHADE_OPENVR
 	, ID3D12Resource *backbuffer
 #endif
 	)
 {
-	RECT window_rect = {};
-	GetClientRect(swap_desc.OutputWindow, &window_rect);
-
-	_width = swap_desc.BufferDesc.Width;
-	_height = swap_desc.BufferDesc.Height;
-	_window_width = window_rect.right - window_rect.left;
-	_window_height = window_rect.bottom - window_rect.top;
+	_width = _window_width = swap_desc.BufferDesc.Width;
+	_height = _window_height = swap_desc.BufferDesc.Height;
 	_color_bit_depth = dxgi_format_color_depth(swap_desc.BufferDesc.Format);
 	_backbuffer_format = swap_desc.BufferDesc.Format;
+
+	if (swap_desc.OutputWindow != nullptr)
+	{
+		RECT window_rect = {};
+		GetClientRect(swap_desc.OutputWindow, &window_rect);
+		_window_width = window_rect.right - window_rect.left;
+		_window_height = window_rect.bottom - window_rect.top;
+	}
 
 	_srv_handle_size = _device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	_rtv_handle_size = _device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	_dsv_handle_size = _device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 	_sampler_handle_size = _device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 
-#if RESHADE_D3D12ON7
+#if RESHADE_D3D12ON7 || RESHADE_OPENVR
 	if (backbuffer != nullptr)
 	{
 		_backbuffers.resize(1);
@@ -190,8 +193,14 @@ bool reshade::d3d12::runtime_d3d12::on_init(const DXGI_SWAP_CHAIN_DESC &swap_des
 
 	for (unsigned int i = 0; i < swap_desc.BufferCount; ++i)
 	{
-		if (_swapchain != nullptr && FAILED(_swapchain->GetBuffer(i, IID_PPV_ARGS(&_backbuffers[i]))))
-			return false;
+#if RESHADE_D3D12ON7 || RESHADE_OPENVR
+		if (backbuffer == nullptr)
+#endif
+		{
+			assert(_swapchain != nullptr);
+			if (FAILED(_swapchain->GetBuffer(i, IID_PPV_ARGS(&_backbuffers[i]))))
+				return false;
+		}
 
 		assert(_backbuffers[i] != nullptr);
 #ifndef NDEBUG
@@ -364,8 +373,10 @@ void reshade::d3d12::runtime_d3d12::on_present()
 	_vertices = _buffer_detection->total_vertices();
 	_drawcalls = _buffer_detection->total_drawcalls();
 
+#if RESHADE_D3D12ON7 || RESHADE_OPENVR
 	// There is no swap chain for d3d12on7
 	if (_swapchain != nullptr)
+#endif
 		_swap_index = _swapchain->GetCurrentBackBufferIndex();
 
 	// Make sure all commands for this command allocator have finished executing before reseting it

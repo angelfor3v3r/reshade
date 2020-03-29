@@ -81,10 +81,11 @@ HRESULT STDMETHODCALLTYPE D3D12CommandQueueDownlevel::Present(ID3D12GraphicsComm
 		swap_desc.BufferDesc.Width = static_cast<UINT>(source_desc.Width);
 		swap_desc.BufferDesc.Height = source_desc.Height;
 		swap_desc.BufferDesc.Format = source_desc.Format;
+		swap_desc.SampleDesc = source_desc.SampleDesc;
 		swap_desc.OutputWindow = hWindow;
 
 		if (!_runtime->on_init(swap_desc, pSourceTex2D))
-			LOG(ERROR) << "Failed to initialize Direct3D 12 runtime environment on runtime " << _runtime.get() << '.';
+			LOG(ERROR) << "Failed to recreate Direct3D 12 runtime environment on runtime " << _runtime.get() << '.';
 	}
 
 	_runtime->on_present();

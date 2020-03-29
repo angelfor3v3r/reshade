@@ -14,6 +14,9 @@ D3D12Device::D3D12Device(ID3D12Device *original) :
 	_buffer_detection(original) {
 	assert(_orig != nullptr);
 	_buffer_detection.init(_orig, nullptr, &_buffer_detection);
+
+	D3D12Device *const device_proxy = this;
+	original->SetPrivateData(__uuidof(D3D12Device), sizeof(device_proxy), &device_proxy);
 }
 
 bool D3D12Device::check_and_upgrade_interface(REFIID riid)

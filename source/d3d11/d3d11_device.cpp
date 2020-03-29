@@ -16,6 +16,9 @@ D3D11Device::D3D11Device(IDXGIDevice1 *dxgi_device, ID3D11Device *original, ID3D
 	_immediate_context(new D3D11DeviceContext(this, immediate_context)) {
 	assert(_orig != nullptr);
 	_immediate_context->_buffer_detection.init(immediate_context, &_immediate_context->_buffer_detection);
+
+	D3D11Device *const device_proxy = this;
+	original->SetPrivateData(__uuidof(D3D11Device), sizeof(device_proxy), &device_proxy);
 }
 
 bool D3D11Device::check_and_upgrade_interface(REFIID riid)

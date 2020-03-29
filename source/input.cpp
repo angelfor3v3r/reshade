@@ -19,7 +19,6 @@ static std::unordered_map<HWND, std::weak_ptr<reshade::input>> s_windows;
 reshade::input::input(window_handle window)
 	: _window(window)
 {
-	assert(window != nullptr);
 }
 
 #if RESHADE_UWP
@@ -42,6 +41,8 @@ void reshade::input::register_window_with_raw_input(window_handle window, bool n
 		no_legacy_keyboard = no_legacy_mouse = true;
 #endif
 
+	assert(window != nullptr);
+
 	const std::lock_guard<std::mutex> lock(s_windows_mutex);
 
 	const auto flags = (no_legacy_keyboard ? 0x1u : 0u) | (no_legacy_mouse ? 0x2u : 0u);
@@ -51,6 +52,8 @@ void reshade::input::register_window_with_raw_input(window_handle window, bool n
 }
 std::shared_ptr<reshade::input> reshade::input::register_window(window_handle window)
 {
+	assert(window != nullptr);
+
 	const std::lock_guard<std::mutex> lock(s_windows_mutex);
 
 	const auto insert = s_windows.emplace(static_cast<HWND>(window), std::weak_ptr<input>());
@@ -62,9 +65,7 @@ std::shared_ptr<reshade::input> reshade::input::register_window(window_handle wi
 #endif
 
 		const auto instance = std::make_shared<input>(window);
-
 		insert.first->second = instance;
-
 		return instance;
 	}
 	else

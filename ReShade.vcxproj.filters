@@ -34,6 +34,9 @@
     <Filter Include="hooks\opengl">
       <UniqueIdentifier>{78832e2a-8fda-4ae5-aecb-a4e0f5a0df02}</UniqueIdentifier>
     </Filter>
+    <Filter Include="hooks\openvr">
+      <UniqueIdentifier>{a817a7ee-8fc7-4610-9cb3-9722c51b4024}</UniqueIdentifier>
+    </Filter>
     <Filter Include="hooks\vulkan">
       <UniqueIdentifier>{40ae025e-f912-4ebf-9a43-69d7c1a96d3e}</UniqueIdentifier>
     </Filter>
@@ -197,6 +200,9 @@
     </ClCompile>
     <ClCompile Include="source\opengl\state_block.cpp">
       <Filter>hooks\opengl</Filter>
+    </ClCompile>
+    <ClCompile Include="source\openvr\vr_system.cpp">
+      <Filter>hooks\openvr</Filter>
     </ClCompile>
     <ClCompile Include="source\vulkan\buffer_detection.cpp">
       <Filter>hooks\vulkan</Filter>

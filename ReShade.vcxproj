@@ -76,15 +76,16 @@
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="Common.props" />
-    <Import Project="deps\Windows.props" />
-    <Import Project="deps\MinHook.props" />
-    <Import Project="deps\gl3w.props" />
-    <Import Project="deps\stb.props" />
-    <Import Project="deps\ImGui.props" />
-    <Import Project="deps\utfcpp.props" />
-    <Import Project="deps\SPIRV.props" />
-    <Import Project="deps\Vulkan.props" />
     <Import Project="deps\D3D12On7.props" />
+    <Import Project="deps\gl3w.props" />
+    <Import Project="deps\ImGui.props" />
+    <Import Project="deps\MinHook.props" />
+    <Import Project="deps\OpenVR.props" />
+    <Import Project="deps\SPIRV.props" />
+    <Import Project="deps\stb.props" />
+    <Import Project="deps\utfcpp.props" />
+    <Import Project="deps\Vulkan.props" />
+    <Import Project="deps\Windows.props" />
   </ImportGroup>
   <PropertyGroup>
     <ExecutablePath>$(SolutionDir)tools;$(ExecutablePath)</ExecutablePath>
@@ -404,6 +405,7 @@
     <ClCompile Include="source\opengl\opengl_hooks_wgl.cpp" />
     <ClCompile Include="source\opengl\runtime_gl.cpp" />
     <ClCompile Include="source\opengl\state_block.cpp" />
+    <ClCompile Include="source\openvr\vr_system.cpp" />
     <ClCompile Include="source\runtime.cpp" />
     <ClCompile Include="source\runtime_config.cpp" />
     <ClCompile Include="source\runtime_gui.cpp" />

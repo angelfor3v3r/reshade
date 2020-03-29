@@ -68,6 +68,15 @@ static inline void *dispatch_key_from_handle(const void *dispatch_handle)
 	return *(void **)dispatch_handle;
 }
 
+VkLayerDispatchTable &dispatch_table_from_device(VkDevice device)
+{
+	return s_device_dispatch.at(dispatch_key_from_handle(device)).dispatch_table;
+}
+VkLayerInstanceDispatchTable &dispatch_table_from_instance(VkInstance instance)
+{
+	return s_instance_dispatch.at(dispatch_key_from_handle(instance));
+}
+
 #define GET_DEVICE_DISPATCH_PTR(name, object) \
 	PFN_vk##name trampoline = s_device_dispatch.at(dispatch_key_from_handle(object)).dispatch_table.name; \
 	assert(trampoline != nullptr);

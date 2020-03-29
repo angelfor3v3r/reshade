@@ -413,6 +413,11 @@ EXPORTS
 	wglUseFontOutlinesA
 	wglUseFontOutlinesW
 
+	; openvr_api.dll
+	VR_InitInternal2
+	VR_ShutdownInternal
+	VR_GetGenericInterface
+
 	; vulkan-1.dll
 	vkCreateDevice
 	vkCreateInstance
